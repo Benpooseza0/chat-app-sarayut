@@ -8,8 +8,9 @@ import { useAuthStore } from "../store/useAuthStore";
 import { formatMessageTime } from "../lib/utils";
 
 const ChatContainer = () => {
-  const { messages, getMessages, isMessagesLoading, selectedUser } =
+  const { messages, getMessages, isMessagesLoading, selectedUser, subscribeToMessages, unsubscribeFromMessages} =
     useChatStore();
+    
   const { authUser } = useAuthStore();
   const messageEndRef = useRef(null);
 
@@ -17,8 +18,11 @@ const ChatContainer = () => {
   useEffect(() => {
     if (!selectedUser?._id) return;
     getMessages(selectedUser._id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedUser?._id]);
+
+    subscribeToMessages()
+    
+    return() => unsubscribeFromMessages()
+  }, [selectedUser?._id, getMessages, subscribeToMessages, unsubscribeFromMessages]);
 
   // ✅ scroll ลงล่างเมื่อมีข้อความใหม่
   useEffect(() => {
