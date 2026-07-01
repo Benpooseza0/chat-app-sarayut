@@ -24,4 +24,4 @@ const MessageSkeleton = () => {
   );
 };
 
-export default MessagesSkeleton;
+export default MessageSkeleton;
