@@ -1,6 +1,7 @@
 import User from "../models/user.model.js";
 import Message from "../models/message.model.js";
-import cloudinary from "cloudinary";
+import cloudinary from "../lib/cloudinary.js"; // ใช้ไฟล์ config ที่ถูกต้อง
+import { getReceiverSocketId } from "../lib/socket.js";
 
 export const getUsersForSidebar = async (req, res) => {
   try {
@@ -41,11 +42,20 @@ export const sendMessage = async (req, res) => {
     const { id: receiverId } = req.params;
     const senderId = req.user._id;
 
-    let imageUrl;
+    let imageUrl = "";
+    let uploadResponse;
+
     if (image) {
-      // อัพโหลดรูปบน Cloudinary
-      const uploadResponse = await cloudinary.uploader.upload(image);
-      imageUrl = uploadResponse.secure_url;
+      try {
+        console.log("Image prefix:", image.substring(0, 30)); // ตรวจว่า base64 มี prefix
+        uploadResponse = await cloudinary.uploader.upload(image, {
+          folder: "chat_images",
+          upload_preset: "chat_images", // ใช้ preset ที่เปิด unsigned upload แล้ว
+        });
+        imageUrl = uploadResponse.secure_url;
+      } catch (err) {
+        console.error("Cloudinary upload error:", err);
+      }
     }
 
     const newMessage = new Message({
@@ -56,10 +66,19 @@ export const sendMessage = async (req, res) => {
     });
 
     await newMessage.save();
+    console.log("Saved message:", newMessage);
 
-    res.status(201).json(newMessage);
+    const receiverSockektId = getReceiverSocketId(receiverId)
+    if(receiverSocketId) {
+      io.to(receiverSocketId).emit("newMessage", newMessage)
+    }
+      
+
+    res.status(201).json(newMessage); // ส่ง response ครั้งเดียว
   } catch (error) {
     console.log("Error in sendMessage controller", error.message);
     res.status(500).json({ error: "เซิร์ฟเวอร์เกิดข้อผิดพลาด" });
   }
 };
+
+

@@ -1,29 +1,31 @@
 import { create } from "zustand";
 import toast from "react-hot-toast";
 import { axiosInstance } from "../lib/axios.js";
+import { useAuthStore } from "./useAuthStore.js";
 
-// สร้าง Zustand store สำหรับการจัดการ state ของแชท
-export const useChatStore = create((set,get) => ({
-  messages: [], // 
+export const useChatStore = create((set, get) => ({
+  messages: [],
   users: [],
   selectedUser: null,
   isUsersLoading: false,
   isMessagesLoading: false,
 
-  // ฟังก์ชันดึงรายชื่อผู้ใช้จาก backend
+  // ดึงรายชื่อผู้ใช้
   getUsers: async () => {
     set({ isUsersLoading: true });
     try {
       const res = await axiosInstance.get("/messages/users");
       set({ users: res.data });
     } catch (error) {
-      toast.error(error.response?.data?.message || "โหลดรายชื่อผู้ใช้ไม่สำเร็จ");
+      toast.error(
+        error.response?.data?.message || "โหลดรายชื่อผู้ใช้ไม่สำเร็จ",
+      );
     } finally {
       set({ isUsersLoading: false });
     }
   },
 
-  // ฟังก์ชันดึงข้อความของผู้ใช้ที่เลือก
+  // ดึงข้อความ
   getMessages: async (userId) => {
     set({ isMessagesLoading: true });
     try {
@@ -36,18 +38,39 @@ export const useChatStore = create((set,get) => ({
     }
   },
 
+  // ส่งข้อความ
   sendMessage: async (messageData) => {
-    const {selectedUser, messages} = get()
+    const { selectedUser, messages } = get();
     try {
-        const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, messageData)
-        set({messages:[...messages,res.data]})
+      const res = await axiosInstance.post(
+        `/messages/send/${selectedUser._id}`,
+        messageData,
+      );
+      set({ messages: [...messages, res.data] });
     } catch (error) {
-        toast.error(error.response.data.message)
-        
+      toast.error(error.response?.data?.message || "ส่งข้อความไม่สำเร็จ");
     }
-
   },
 
-  // ฟังก์ชันเลือกผู้ใช้
+  // subscribe รับข้อความใหม่จาก socket
+  subscribeToMessages: () => {
+    const { selectedUser } = get();
+    if (!selectedUser) return;
+
+    const socket = useAuthStore.getState().socket;
+    if (!socket) return;
+
+    socket.on("newMessage", (newMessage) => {
+      set({ messages: [...get().messages, newMessage] });
+    });
+  },
+
+  // unsubscribe ปิดการฟัง event
+  unsubscribeFromMessages: () => {
+    const socket = useAuthStore.getState().socket;
+    if (socket) socket.off("newMessage");
+  },
+
+  // เลือกผู้ใช้
   setSelectedUser: (selectedUser) => set({ selectedUser }),
 }));

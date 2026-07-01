@@ -9,12 +9,13 @@ const ProfilePage = () => {
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
-    if (!file) return;
-
     const reader = new FileReader();
-    reader.onload = () => {
-      setSelectedImg(reader.result);
-      toast.success("เลือกรูปภาพสำเร็จ");
+    reader.onloadend = () => {
+      const base64String = reader.result; // จะได้ data:image/png;base64,...
+      axios.post(`/api/messages/send/${receiverId}`, {
+        text,
+        image: base64String,
+      });
     };
     reader.readAsDataURL(file);
   };
