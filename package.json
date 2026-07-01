@@ -1,0 +1,22 @@
+{
+  "name": "chat-app-sarayut",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "npm install --prefix backend && npm install --prefix frontend && npm run build --prefix frontend",
+    "start": "npm run start --prefix backend"
+
+    
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Benpooseza0/chat-app-sarayut.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Benpooseza0/chat-app-sarayut/issues"
+  },
+  "homepage": "https://github.com/Benpooseza0/chat-app-sarayut#readme"
+}
